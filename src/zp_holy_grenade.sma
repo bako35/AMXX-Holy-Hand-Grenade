@@ -8,7 +8,7 @@
 #include <hamsandwich>
 #include <zombieplague>
 
-#define VERSION "1.0"
+#define VERSION "2.1"
 
 new const NADE_TYPE_HOLY = 2137;
 new const NADE_DURATION_HOLY = pev_flSwimTime;
@@ -19,7 +19,7 @@ new const g_pmodel[] = "models/p_holygrenade.mdl";
 new const g_wmodel[] = "models/w_holygrenade.mdl";
 new const g_trailspr[] ="sprites/laserbeam.spr";
 new const g_firespr[] = "sprites/fexplo.spr";
-new const g_flare[] = "models/zombie_plague/v_grenade_flare.mdl";
+new const g_flare[] = "models/zombie_plague/v_light.mdl";
 
 new ma_holy[33];
 new g_trail
@@ -73,13 +73,14 @@ public zp_extra_item_selected(id, itemid){
 	if(itemid == holyid){
 	if(is_user_alive(id)){
 		new was = cs_get_user_bpammo(id, CSW_SMOKEGRENADE);
+		ma_holy[id] = true;
 		if(was >= 1){
-			cs_set_user_bpammo(id, CSW_SMOKEGRENADE, was + 1);
+			ExecuteHamB(Ham_GiveAmmo, id, 1, "SmokeGrenade", 32);
+			emit_sound(id, CHAN_ITEM, "items/9mmclip1.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
 		}
 		else{
 			give_item(id, "weapon_smokegrenade");
 		}
-		ma_holy[id] = true;
 		replace_models(id);
 	}
 	else{
