@@ -7,12 +7,13 @@
 #include <engine>
 #include <hamsandwich>
 
-#define VERSION "1.0"
+#define VERSION "2.1"
 
 new const NADE_TYPE_HOLY = 2137;
 new const NADE_DURATION_HOLY = pev_flSwimTime;
 new const g_sound[] = "weapons/holy.wav";
 new const g_soundex[] = "weapons/holyexplosion.wav";
+new const g_soundamb[] = "weapons/holyambience.wav";
 new const g_vmodel[] = "models/v_holygrenade.mdl";
 new const g_pmodel[] = "models/p_holygrenade.mdl";
 new const g_wmodel[] = "models/w_holygrenade.mdl";
@@ -20,19 +21,20 @@ new const g_trailspr[] ="sprites/laserbeam.spr";
 new const g_firespr[] = "sprites/fexplo.spr";
 
 new ma_holy[33];
+new hambience
 new g_trail
 new g_fire
 new g_death
 new g_score
 
 public plugin_init() {
-	register_plugin("Holy Hand Grenade", VERSION, "bako35")
-	register_event("CurWeapon", "replace_models", "be", "1=1")
+	register_plugin("Holy Hand Grenade", VERSION, "bako35");
+	register_event("CurWeapon", "replace_models", "be", "1=1");
 	register_forward(FM_SetModel,"fw_SetModel", 1);
 	RegisterHam(Ham_Think, "grenade", "fw_ThinkGren");
 	RegisterHam(Ham_Spawn, "player", "fw_Spawn");
 	
-	register_clcmd("hgrenade", "holygrenade")
+	register_clcmd("hgrenade", "holygrenade");
 	
 	g_death = get_user_msgid("DeathMsg");
 	g_score = get_user_msgid("ScoreInfo");
@@ -44,6 +46,7 @@ public plugin_precache(){
 	precache_model(g_wmodel);
 	precache_sound(g_sound);
 	precache_sound(g_soundex);
+	precache_sound(g_soundamb);
 	g_trail = precache_model(g_trailspr);
 	g_fire = precache_model(g_firespr);
 	
@@ -64,13 +67,14 @@ public fw_Spawn(id){
 public holygrenade(id){
 	if(is_user_alive(id)){
 		new was = cs_get_user_bpammo(id, CSW_SMOKEGRENADE);
+		ma_holy[id] = true;
 		if(was >= 1){
-			cs_set_user_bpammo(id, CSW_SMOKEGRENADE, was + 1);
+			ExecuteHamB(Ham_GiveAmmo, id, 1, "SmokeGrenade", 32);
+			emit_sound(id, CHAN_ITEM, "items/9mmclip1.wav", VOL_NORM, ATTN_NORM, 0, PITCH_NORM);
 		}
 		else{
 			give_item(id, "weapon_smokegrenade");
 		}
-		ma_holy[id] = true;
 		replace_models(id);
 	}
 	else{
@@ -87,6 +91,7 @@ public replace_models(id)
 		{
 			set_pev(id, pev_viewmodel2, g_vmodel);
 			set_pev(id, pev_weaponmodel2, g_pmodel);
+			set_task(4.5, "holyambience", hambience, _, _, "b");
 		}
 	}
 }
@@ -294,6 +299,16 @@ public holysound(entity){
 	}
 	
 	emit_sound(entity, CHAN_WEAPON, g_sound, 1.0, ATTN_NORM, 0, PITCH_NORM);
+}
+
+public holyambience(id){
+	new weapon = read_data(2)
+	if(weapon = CSW_SMOKEGRENADE && ma_holy[id]){
+		emit_sound(id, CHAN_WEAPON, g_soundamb, 1.0, ATTN_NORM, 0, PITCH_NORM);
+	}
+	else{
+		remove_task(hambience);
+	}
 }
 
 SendDeathMsg(attacker, victim) // Sends death message
